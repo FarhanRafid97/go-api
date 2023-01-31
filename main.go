@@ -1,6 +1,7 @@
 package main
 
 import (
+	"go-api/controllers"
 	"go-api/initializers"
 
 	"github.com/gin-gonic/gin"
@@ -16,8 +17,7 @@ func init() {
 }
 func main() {
 	r := gin.Default()
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{"Message": "hello"})
-	})
+	r.POST("/posts", controllers.CreatePost)
+	r.GET("/posts", controllers.GetPost)
 	r.Run()
 }
