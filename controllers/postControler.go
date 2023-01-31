@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-api/initializers"
 	"go-api/models"
+	"math"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -24,7 +25,8 @@ func CreatePost(c *gin.Context) {
 }
 
 func GetPost(c *gin.Context) {
-	post := []models.Post{}
+	posts := []models.Post{}
+	post := models.Post{}
 	query := c.Request.URL.Query()
 	limit := query.Get("limit")
 	cursor := query.Get("cursor")
@@ -34,8 +36,11 @@ func GetPost(c *gin.Context) {
 
 	isMore := true
 
-	result := initializers.DB.Where("ID > ? ", cursorNum).Limit(limitPlusONe).Find(&post)
-	if len(post) == limitPlusONe {
+	var count int64
+	initializers.DB.Model(&post).Count(&count)
+	fmt.Println(count)
+	result := initializers.DB.Where("ID > ? ", cursorNum).Limit(limitPlusONe).Find(&posts)
+	if len(posts) == limitPlusONe {
 		isMore = true
 	} else {
 		isMore = false
@@ -44,9 +49,52 @@ func GetPost(c *gin.Context) {
 		c.Status(400)
 		return
 	}
-	fmt.Println(len(post))
-	post = post[:len(post)-1]
-	fmt.Println(len(post))
 
-	c.JSON(200, gin.H{"status": 200, "message": "OK", "Post": post, "IsMore": isMore})
+	posts = posts[:len(posts)-1]
+
+	c.JSON(200, gin.H{"status": 200, "message": "OK", "Post": posts, "IsMore": isMore})
+}
+
+func GetPostPerPage(c *gin.Context) {
+	posts := []models.Post{}
+	post := models.Post{}
+	query := c.Request.URL.Query()
+	page := query.Get("page")
+	pageNum, _ := strconv.Atoi(page)
+	currentPage := 1
+
+	if pageNum != 0 {
+		currentPage = pageNum
+	}
+
+	currentId := 0
+
+	if currentPage == 1 {
+		currentId = 0
+	} else {
+		state := currentPage - 1
+
+		currentId = 5 * state
+
+	}
+	fmt.Println("current Id", currentId)
+
+	var count int64
+	initializers.DB.Model(&post).Count(&count)
+
+	result := initializers.DB.Where("ID > ? ", currentId).Limit(5).Find(&posts)
+	if result.Error != nil {
+		c.Status(400)
+		return
+	}
+
+	totalPage := math.Ceil(float64(count) / float64(5))
+	fmt.Println(totalPage)
+
+	if len(posts) == 0 {
+		c.JSON(404, gin.H{"status": 404, "message": "Bad Request", "Post": posts, "TotalPage": totalPage, "CurrentPage": "Null"})
+		return
+	}
+
+	c.JSON(200, gin.H{"status": 200, "message": "OK", "Post": posts, "TotalPage": totalPage, "CurrentPage": currentPage})
 }

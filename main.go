@@ -19,5 +19,6 @@ func main() {
 	r := gin.Default()
 	r.POST("/posts", controllers.CreatePost)
 	r.GET("/posts", controllers.GetPost)
+	r.GET("/posts/page", controllers.GetPostPerPage)
 	r.Run()
 }
