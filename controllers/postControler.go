@@ -49,6 +49,7 @@ func GetPost(c *gin.Context) {
 
 	c.JSON(200, gin.H{"status": 200, "message": "OK", "Post": post})
 }
+
 func GetPosts(c *gin.Context) {
 	posts := []models.Post{}
 	post := models.Post{}
@@ -143,9 +144,9 @@ func DeletePost(c *gin.Context) {
 }
 
 func UpdatePost(c *gin.Context) {
-	post := models.Post{}
 	params := c.Params
 	id, _ := params.Get("id")
+	post := models.Post{}
 
 	numId, _ := strconv.Atoi(id)
 	isPost := initializers.DB.Where("id = ?", numId).First(&post)
@@ -158,12 +159,12 @@ func UpdatePost(c *gin.Context) {
 
 		return
 	}
-
-	result := initializers.DB.Where("id = ?", numId).Delete(&post)
+	c.BindJSON(&post)
+	result := initializers.DB.Where("id = ?", numId).Updates(&models.Post{Title: post.Title, Body: post.Body}).Take(&post)
 	if result.Error != nil {
-		c.Status(400)
+		c.JSON(400, gin.H{"Message": result.Error.Error(), "Status": 400})
 		return
 	}
 
-	c.JSON(200, gin.H{"status": 200, "message": "Success Delete Data"})
+	c.JSON(200, gin.H{"status": 200, "message": "Success Delete Data", "Data": post})
 }
