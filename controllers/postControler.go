@@ -29,6 +29,27 @@ func CreatePost(c *gin.Context) {
 }
 
 func GetPost(c *gin.Context) {
+	params := c.Params
+	id, err := params.Get("id")
+	if err {
+		fmt.Println("dsaas")
+	}
+	post := models.Post{}
+	result := initializers.DB.Where("ID = ?", id).First(&post)
+	if result.Error != nil {
+		if result.Error.Error() == "record not found" {
+
+			c.JSON(404, gin.H{"Status": 404, "Message": result.Error.Error()})
+			return
+		}
+		c.JSON(400, gin.H{"Status": 400, "Message": result.Error.Error()})
+		return
+
+	}
+
+	c.JSON(200, gin.H{"status": 200, "message": "OK", "Post": post})
+}
+func GetPosts(c *gin.Context) {
 	posts := []models.Post{}
 	post := models.Post{}
 	query := c.Request.URL.Query()
