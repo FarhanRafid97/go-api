@@ -23,5 +23,7 @@ func main() {
 	r.PUT("/post/:id", controllers.UpdatePost)
 	r.DELETE("/post/:id", controllers.DeletePost)
 	r.GET("/posts/page", controllers.GetPostPerPage)
+
+	r.POST("/auth/register", controllers.RegisterUser)
 	r.Run()
 }

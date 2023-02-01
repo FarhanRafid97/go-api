@@ -30,10 +30,8 @@ func CreatePost(c *gin.Context) {
 
 func GetPost(c *gin.Context) {
 	params := c.Params
-	id, err := params.Get("id")
-	if err {
-		fmt.Println("dsaas")
-	}
+	id, _ := params.Get("id")
+
 	post := models.Post{}
 	result := initializers.DB.Where("ID = ?", id).First(&post)
 	if result.Error != nil {

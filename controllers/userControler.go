@@ -1,0 +1,34 @@
+package controllers
+
+import (
+	"go-api/initializers"
+	"go-api/models"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
+)
+
+func RegisterUser(c *gin.Context) {
+
+	user := models.User{}
+	c.BindJSON(&user)
+
+	if user.Password == "" || user.Username == "" {
+		c.JSON(400, gin.H{"Status": 400, "Message": "please input username or password"})
+		return
+	}
+
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+
+	user.Password = string(hashedPassword)
+
+	result := initializers.DB.Create(&user)
+	if result.Error != nil {
+		errs := strings.Split(result.Error.Error(), "(")[0]
+		c.JSON(400, gin.H{"Status": 400, "Message": strings.Replace(errs, `"`, "", 100)})
+		return
+	}
+
+	c.JSON(200, gin.H{"Message": "Success create new User", "Data": user})
+}
