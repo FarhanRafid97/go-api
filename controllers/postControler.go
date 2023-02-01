@@ -15,9 +15,9 @@ type IdPost struct {
 }
 
 func CreatePost(c *gin.Context) {
-	query := c.Request.URL.Query()
-	fmt.Println(query)
-	post := models.Post{Title: "hello", Body: "world"}
+
+	post := models.Post{}
+	c.BindJSON(&post)
 	result := initializers.DB.Create(&post)
 
 	if result.Error != nil {
@@ -96,6 +96,32 @@ func GetPostPerPage(c *gin.Context) {
 }
 
 func DeletePost(c *gin.Context) {
+	post := models.Post{}
+	params := c.Params
+	id, _ := params.Get("id")
+
+	numId, _ := strconv.Atoi(id)
+	isPost := initializers.DB.Where("id = ?", numId).First(&post)
+
+	if isPost.Error != nil {
+		if isPost.Error.Error() == "record not found" {
+			c.JSON(404, gin.H{"Message": isPost.Error.Error(), "Status": 404})
+		}
+		c.JSON(400, gin.H{"Message": isPost.Error.Error(), "Status": 400})
+
+		return
+	}
+
+	result := initializers.DB.Where("id = ?", numId).Delete(&post)
+	if result.Error != nil {
+		c.Status(400)
+		return
+	}
+
+	c.JSON(200, gin.H{"status": 200, "message": "Success Delete Data"})
+}
+
+func UpdatePost(c *gin.Context) {
 	post := models.Post{}
 	params := c.Params
 	id, _ := params.Get("id")
