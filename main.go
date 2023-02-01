@@ -25,5 +25,6 @@ func main() {
 	r.GET("/posts/page", controllers.GetPostPerPage)
 
 	r.POST("/auth/register", controllers.RegisterUser)
+	r.POST("/auth/login", controllers.LoginUser)
 	r.Run()
 }
