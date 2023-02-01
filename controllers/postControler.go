@@ -10,6 +10,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type IdPost struct {
+	Id int
+}
+
 func CreatePost(c *gin.Context) {
 	query := c.Request.URL.Query()
 	fmt.Println(query)
@@ -58,6 +62,10 @@ func GetPost(c *gin.Context) {
 func GetPostPerPage(c *gin.Context) {
 	posts := []models.Post{}
 	post := models.Post{}
+	var idPost IdPost
+
+	c.BindJSON(&idPost)
+
 	query := c.Request.URL.Query()
 	page := query.Get("page")
 	pageNum, _ := strconv.Atoi(page)
@@ -67,22 +75,10 @@ func GetPostPerPage(c *gin.Context) {
 		currentPage = pageNum
 	}
 
-	currentId := 0
-
-	if currentPage == 1 {
-		currentId = 0
-	} else {
-		state := currentPage - 1
-
-		currentId = 5 * state
-
-	}
-	fmt.Println("current Id", currentId)
-
 	var count int64
 	initializers.DB.Model(&post).Count(&count)
 
-	result := initializers.DB.Where("ID > ? ", currentId).Limit(5).Find(&posts)
+	result := initializers.DB.Where("ID > ? ", idPost.Id).Limit(5).Find(&posts)
 	if result.Error != nil {
 		c.Status(400)
 		return
@@ -97,4 +93,30 @@ func GetPostPerPage(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"status": 200, "message": "OK", "Post": posts, "TotalPage": totalPage, "CurrentPage": currentPage})
+}
+
+func DeletePost(c *gin.Context) {
+	post := models.Post{}
+	params := c.Params
+	id, _ := params.Get("id")
+
+	numId, _ := strconv.Atoi(id)
+	isPost := initializers.DB.Where("id = ?", numId).First(&post)
+
+	if isPost.Error != nil {
+		if isPost.Error.Error() == "record not found" {
+			c.JSON(404, gin.H{"Message": isPost.Error.Error(), "Status": 404})
+		}
+		c.JSON(400, gin.H{"Message": isPost.Error.Error(), "Status": 400})
+
+		return
+	}
+
+	result := initializers.DB.Where("id = ?", numId).Delete(&post)
+	if result.Error != nil {
+		c.Status(400)
+		return
+	}
+
+	c.JSON(200, gin.H{"status": 200, "message": "Success Delete Data"})
 }
