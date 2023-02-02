@@ -82,37 +82,42 @@ func GetPosts(c *gin.Context) {
 func GetPostPerPage(c *gin.Context) {
 	posts := []models.Post{}
 	post := models.Post{}
-	var idPost IdPost
+	param := c.Request.URL.Query()
+	page := 0
+	limit := 5
+	paramPage := param.Get("page")
+	paramLimit := param.Get("limit")
+	if paramLimit != "" {
 
-	c.BindJSON(&idPost)
-
-	query := c.Request.URL.Query()
-	page := query.Get("page")
-	pageNum, _ := strconv.Atoi(page)
-	currentPage := 1
-
-	if pageNum != 0 {
-		currentPage = pageNum
+		limitNum, _ := strconv.Atoi(paramLimit)
+		limit = limitNum
 	}
+	if paramPage != "" {
 
+		pageNum, _ := strconv.Atoi(paramPage)
+		page = pageNum
+	}
 	var count int64
-	initializers.DB.Model(&post).Count(&count)
+	result2nd := initializers.DB.Model(&post).Count(&count)
+	if result2nd.Error != nil {
+		c.Status(401)
+		return
+	}
+	totalPage := math.Ceil(float64(count) / float64(limit))
 
-	result := initializers.DB.Where("ID > ? ", idPost.Id).Limit(5).Find(&posts)
+	result := initializers.DB.Limit(limit).Offset(page * limit).Find(&posts)
+
 	if result.Error != nil {
 		c.Status(400)
 		return
 	}
-
-	totalPage := math.Ceil(float64(count) / float64(5))
-	fmt.Println(totalPage)
 
 	if len(posts) == 0 {
 		c.JSON(404, gin.H{"status": 404, "message": "Bad Request", "Post": posts, "TotalPage": totalPage, "CurrentPage": "Null"})
 		return
 	}
 
-	c.JSON(200, gin.H{"status": 200, "message": "OK", "Post": posts, "TotalPage": totalPage, "CurrentPage": currentPage})
+	c.JSON(200, gin.H{"status": 200, "message": "OK", "Post": posts, "TotalPage": totalPage})
 }
 
 func DeletePost(c *gin.Context) {
